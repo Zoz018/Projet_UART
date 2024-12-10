@@ -19,19 +19,11 @@ architecture behavorial of TxUnit is
   signal bufferT, registerT : std_logic_vector(7 downto 0);
   -- Compteur de bit pour savoir si on est dans le cas du bit de start, des 8 bits d'emission, du bit de parité ou du bit de stop 
   signal cpt_bit : integer;
+  -- Parité
+  signal parite : std_logic;
   --etat
   type t_etat is (repos,init,debut,transmission,fin);
   signal etat : t_etat;
-
-  -- Fonction annexe qui permet de calculer le bit de parité avec comme argument un registre
-  function parity_bit(registre : std_logic_vector(7 downto 0)) return std_logic is 
-  variable result : std_logic := '0';
-  begin
-  for i in 0 to 7 loop
-    result := result xor registre(i);
-  end loop;
-  return result;
-  end function;
 
 begin
   process(clk,reset)
@@ -47,6 +39,7 @@ begin
         case etat is 
 
           when repos => 
+            txd <= '1';
             if ld = '1' then 
               etat <= init;          
             end if;
@@ -62,11 +55,40 @@ begin
           when debut => 
             txd <= '0';
             cpt_bit <= 7; 
+            if (ld = '1') and (bufE='1') then 
+              bufferT <= data;
+              bufE <= '0';
+            end if;
             if (enable = '1') then 
               etat <= transmission;
             end if;
           
           when transmission then 
+            txd <= registerT(cpt_bit);
+            parite <= parite xor registerT(cpt_bit);
+            if (ld = '1') and (bufE='1') then 
+              bufferT <= data;
+              bufE <= '0';
+            end if;
+            if (cpt_bit = 0) and (enable ='1') then 
+              etat <= fin;
+            else 
+              cpt_bit <= cpt_bit - 1;
+            end if;
+
+          when fin => 
+            txd <= parite;
+            if (ld = '1') and (bufE='1') then 
+              bufferT <= data;
+              bufE <= '0';
+            end if;
+            if (enable = '1') and (bufE = '0') then 
+              etat <= init;
+              txd <= '1';
+            elsif (enable = '1') and (bufE = '1') then
+              etat <= repos;
+              txd <= '1';
+            end if;
          
     end if;
   end process;
