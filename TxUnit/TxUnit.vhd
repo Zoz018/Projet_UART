@@ -21,12 +21,13 @@ architecture behavorial of TxUnit is
   signal cpt_bit : integer;
   signal bufE_signal : std_logic;
   -- Parité
-  signal parite : std_logic;
+  signal parite : std_logic := '0';
   --etat
   type t_etat is (repos,init,debut,transmission,fin);
   signal etat : t_etat;
 
 begin
+
   process(clk,reset)
   begin 
     if reset = '0' then
@@ -41,59 +42,78 @@ begin
         case etat is 
 
           when repos => 
-            txd <= '1';
             if ld = '1' then 
               etat <= init;          
             end if;
 
           when init => 
-            registerT <= bufferT;
-            regE <= '0';
-            bufE_signal <= '1';
+            bufferT <= data;
+            bufE_signal <= '0';
             bufE <= bufE_signal;
+
             if enable = '1' then 
               etat <= debut;
             end if;
 
           when debut => 
+            registerT <= bufferT;
+            regE <= '0';
+            bufE <= '1';
+            cpt_bit <= 7;
+            -- Bit de start
             txd <= '0';
-            cpt_bit <= 7 ; 
+
+            --Chargement du buffer
             if (ld = '1') and (bufE_signal='1') then 
               bufferT <= data;
               bufE_signal <= '0';
               bufE <= bufE_signal;
             end if;
+
             if (enable = '1') then 
               etat <= transmission;
             end if;
           
           when transmission => 
-            txd <= registerT(cpt_bit);
-            parite <= parite xor registerT(cpt_bit);
+            
+            --Chargement du buffer
             if (ld = '1') and (bufE_signal='1') then 
               bufferT <= data;
               bufE_signal <= '0';
               bufE <= bufE_signal;
             end if;
+
             if (cpt_bit = 0) and (enable ='1') then 
               etat <= fin;
             elsif (cpt_bit > 0) and (enable = '1') then 
+
+              --Bit de données
+              txd <= registerT(cpt_bit);
+              parite <= parite xor registerT(cpt_bit);
               cpt_bit <= cpt_bit - 1;
+
             end if;
 
           when fin => 
+
+            --Bit de parité
             txd <= parite;
+
+            --Chargement du buffer
             if (ld = '1') and (bufE_signal='1') then 
               bufferT <= data;
               bufE_signal <= '0';
               bufE <= bufE_signal;
             end if;
-            if (enable = '1') and (bufE_signal = '0') then 
+
+            if (enable = '1') and (bufE_signal = '0') then
+              --Bit de stop
+              txd <= '1'; 
               etat <= init;
-              txd <= '1';
             elsif (enable = '1') and (bufE_signal = '1') then
-              etat <= repos;
+              --Bit de stop
               txd <= '1';
+              etat <= repos;
             end if;
         end case;
          
