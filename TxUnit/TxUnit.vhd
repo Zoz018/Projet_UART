@@ -29,7 +29,31 @@ begin
 
     elsif rising_edge(clk) then 
       if enable = '1' then 
+        case cpt_bit is 
+          -- Bit de start
+          when 0 => txd <= '0';
+          -- Bits de données 
+          when 1 to 8 => txd <= registerT(7 - (cpt_bit));
+          -- Bit de parité calculé avec une fonction annexe
+          when 9 => txd <= parity_bit(registerT);
+          -- Bit de stop 
+          when 10 => txd <= '1';
+          when others => txd <= '1';
+        end case; 
+        if cpt_bit = 10 then
+          -- On remet le compteur de bit à zéro 
+          cpt_bit <= 0;
+          -- Le registre d'émission n'est plus occupé
+          regE <= '1';
+        else
+          -- Incrémentation du compteur de bit
+          cpt_bit <= cpt_bit + 1;
+        end if;
+      end if;
     end if;
   end process;
+
+  -- Fonction annexe qui permet de calculer le bit de parité avec comme argument un registre
+  function 
 
 end behavorial;

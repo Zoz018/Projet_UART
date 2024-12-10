@@ -1,0 +1,10 @@
+Running: /mnt/n7fs/install/xilinx_14.7/ISE/bin/lin64/unwrapped/fuse -intstyle ise -incremental -o bin -prj ise.prj -top testTxUnit 
+ISim P.20131013 (signature 0xfbc00daa)
+Number of CPUs detected in this system: 4
+Turning on mult-threading, number of parallel sub-compilation jobs: 8 
+Determining compilation order of HDL files
+Parsing VHDL file "../clkUnit/clkUnit.vhd" into library work
+Parsing VHDL file "TxUnit.vhd" into library work
+ERROR:HDLCompiler:69 - "TxUnit.vhd" Line 38: <parity_bit> is not declared.
+ERROR:HDLCompiler:854 - "TxUnit.vhd" Line 15: Unit <behavorial> ignored due to previous errors.
+VHDL file TxUnit.vhd ignored due to errors
