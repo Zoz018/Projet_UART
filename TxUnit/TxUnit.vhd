@@ -18,7 +18,10 @@ architecture behavorial of TxUnit is
   -- Déclaration du tamppon et du registre d'emission
   signal bufferT, registerT : std_logic_vector(7 downto 0);
   -- Compteur de bit pour savoir si on est dans le cas du bit de start, des 8 bits d'emission, du bit de parité ou du bit de stop 
-  signal cpt_bit : integer := 1;
+  signal cpt_bit : integer;
+  --etat
+  type t_etat is (repos,init,debut,transmission,fin);
+  signal etat : t_etat;
 
   -- Fonction annexe qui permet de calculer le bit de parité avec comme argument un registre
   function parity_bit(registre : std_logic_vector(7 downto 0)) return std_logic is 
@@ -38,35 +41,33 @@ begin
       txd <= '1';
       bufE <= '1';
       regE <= '1';
+      etat <= repos;
 
     elsif rising_edge(clk) then 
-        if ld = '1' then 
-          bufE <= '0';
-          bufferT <= data;
-          registerT <= bufferT; 
-          bufE<='1';
-          --Bit de start
-          txd <= '0';
+        case etat is 
 
-        if enable = '1' then
-            case cpt_bit is 
-                -- Bits de données 
-                when 1 to 7 => txd <= registerT(7 - (cpt_bit - 1));
-                when 8 =>  txd <= registerT(7 - (cpt_bit - 1));
-                           -- Le registre d'émission n'est plus occupé
-                           regE <= '1';
-                -- Bit de parité calculé avec une fonction annexe
-                when 9 => txd <= parity_bit(registerT);
-                -- Bit de stop 
-                when 10 => txd <= '1';
-                          -- On remet le compteur de bit à zéro 
-                          cpt_bit <= 1; 
-                when others => txd <= '1';
-              end case; 
-              -- Incrémentation du compteur de bit
-              cpt_bit <= cpt_bit + 1;
-          end if;
-        end if;
+          when repos => 
+            if ld = '1' then 
+              etat <= init;          
+            end if;
+
+          when init => 
+            registreT <= bufferT;
+            regE <= '0';
+            bufE <= '1';
+            if enable = '1' then 
+              etat <= debut;
+            end if;
+
+          when debut => 
+            txd <= '0';
+            cpt_bit <= 7; 
+            if (enable = '1') then 
+              etat <= transmission;
+            end if;
+          
+          when transmission then 
+         
     end if;
   end process;
 end behavorial;
