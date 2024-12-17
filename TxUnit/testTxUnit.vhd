@@ -140,6 +140,29 @@ BEGIN
      -- en compte de la demande d'émission d'un second
      -- caractère se fait lorsqu'on émet un premier caractère
      -- et ceci quelque soit l'étape d'émission
+    
+     -- si oui, on charge la donnée
+     wait for clk_period*190;
+     -- émission du caractère 0x55
+     data <= "11111111";
+     ld <= '1';
+     
+     -- on attend de voir que l'ordre d'émission
+     -- a été bien pris en compte avant de rabaisser
+     -- le signal ld
+     if not (regE='1' and bufE='0') then
+      wait until regE='1' and bufE='0';
+    end if;
+    wait for clk_period;
+    ld <= '0';
+
+    -- si oui, on charge la donnée
+    wait for clk_period*100;
+    -- émission du caractère 0x55
+    data <= "00000001";
+    ld <= '1';
+    wait for clk_period;
+    ld <= '0';
 
      wait;
    end process;
